@@ -101,20 +101,225 @@ function Catalog() {
   </main>
 }
 
+
 function ListingDetail() {
-  const {id}=useParams(); const [listing,setListing]=useState(null); const [form,setForm]=useState({buyerName:"",buyerEmail:"",buyerPhone:"",message:""}); const [sent,setSent]=useState(false); const [error,setError]=useState("");
-  useEffect(()=>{api.listing(id).then(x=>setListing(x.listing)).catch(()=>setError("Listing not found."))},[id]);
-  if(error) return <main className="mx-auto max-w-4xl px-4 py-20 text-center"><h1 className="text-3xl font-black">{error}</h1></main>;
-  if(!listing) return <main className="mx-auto max-w-7xl px-4 py-20"><div className="h-96 animate-pulse rounded-3xl bg-slate-200"/></main>;
-  const submit=async e=>{e.preventDefault();setError("");try{await api.inquiry({...form,listingId:id});setSent(true)}catch(err){setError(err.message)}};
-  return <main className="mx-auto max-w-7xl px-4 py-10"><Link to="/catalog" className="text-sm font-bold text-braxtar-700">← Back to equipment</Link><div className="mt-6 grid gap-10 lg:grid-cols-2">
-    <div><div className="overflow-hidden rounded-3xl bg-slate-100"><img src={listing.images?.[0]?.url} alt={listing.title} className="max-h-[620px] w-full object-cover"/></div><div className="mt-5 rounded-2xl border bg-white p-6"><h2 className="font-black">Equipment specifications</h2><div className="mt-5 grid grid-cols-2 gap-4">{Object.entries(listing.specs||{}).map(([k,v])=><div key={k}><p className="text-xs font-bold uppercase text-slate-400">{k}</p><p className="mt-1 text-sm font-semibold">{String(v)}</p></div>)}</div></div></div>
-    <div><div className="flex items-center gap-3"><Condition value={listing.condition}/><span className="flex items-center gap-1 text-sm text-slate-500"><MapPin className="h-4"/> {listing.region}</span></div><h1 className="mt-4 text-4xl font-black leading-tight">{listing.title}</h1><p className="mt-2 text-slate-500">{listing.brand} · {listing.model} · {listing.yearManufactured}</p><div className="mt-7"><Price listing={listing}/></div><p className="mt-6 leading-7 text-slate-600">{listing.description}</p><div className="mt-8 rounded-2xl border-2 border-braxtar-100 bg-braxtar-50 p-5"><div className="flex gap-3"><ShieldCheck className="mt-1 h-6 shrink-0 text-braxtar-600"/><div><h3 className="font-bold">Protected sourcing</h3><p className="mt-1 text-sm leading-6 text-slate-600">Braxtar handles buyer communication and seller coordination. Seller identity and exact facility location are not published.</p></div></div></div>
-      <div className="mt-8 rounded-2xl border bg-white p-6 shadow-sm"><h2 className="text-xl font-black">Ask Braxtar about this equipment</h2>{sent?<div className="py-8 text-center"><CheckCircle2 className="mx-auto h-12 text-green-600"/><h3 className="mt-4 font-bold">Inquiry received</h3><p className="mt-2 text-sm text-slate-500">Braxtar Tech will contact you directly.</p></div>:<form onSubmit={submit} className="mt-5 space-y-4">{["buyerName","buyerEmail","buyerPhone"].map(k=><input required key={k} value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})} type={k==="buyerEmail"?"email":"text"} placeholder={{buyerName:"Full name",buyerEmail:"Email address",buyerPhone:"Phone number"}[k]} className="w-full rounded-xl border p-3.5"/>)}
-      <textarea required value={form.message} onChange={e=>setForm({...form,message:e.target.value})} placeholder="Tell us what you need to know..." rows="4" className="w-full rounded-xl border p-3.5"/>{error&&<p className="text-sm font-semibold text-red-600">{error}</p>}<button className="w-full rounded-xl bg-braxtar-700 px-5 py-3.5 font-bold text-white hover:bg-braxtar-800">Send inquiry <MessageSquare className="ml-2 inline h-4"/></button></form>}</div>
-    </div></div></div>
-  </main>
+  const { id } = useParams();
+  const [listing, setListing] = useState(null);
+  const [form, setForm] = useState({
+    buyerName: "",
+    buyerEmail: "",
+    buyerPhone: "",
+    message: ""
+  });
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    api.listing(id)
+      .then(x => setListing(x.listing))
+      .catch(() => setError("Listing not found."));
+  }, [id]);
+
+  if (error) {
+    return (
+      <main className="mx-auto max-w-4xl px-4 py-20 text-center">
+        <h1 className="text-3xl font-black">{error}</h1>
+      </main>
+    );
+  }
+
+  if (!listing) {
+    return (
+      <main className="mx-auto max-w-7xl px-4 py-20">
+        <div className="h-96 animate-pulse rounded-3xl bg-slate-200" />
+      </main>
+    );
+  }
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    try {
+      await api.inquiry({
+        ...form,
+        listingId: id
+      });
+
+      setSent(true);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  return (
+    <main className="mx-auto max-w-7xl px-4 py-10">
+      <Link
+        to="/catalog"
+        className="text-sm font-bold text-braxtar-700"
+      >
+        ← Back to equipment
+      </Link>
+
+      <div className="mt-6 grid gap-10 lg:grid-cols-2">
+
+        {/* LEFT SIDE */}
+        <div>
+          <div className="overflow-hidden rounded-3xl bg-slate-100">
+            <img
+              src={listing.images?.[0]?.url}
+              alt={listing.title}
+              className="max-h-[620px] w-full object-cover"
+            />
+          </div>
+
+          <div className="mt-5 rounded-2xl border bg-white p-6">
+            <h2 className="font-black">Equipment specifications</h2>
+
+            <div className="mt-5 grid grid-cols-2 gap-4">
+              {Object.entries(listing.specs || {}).map(([k, v]) => (
+                <div key={k}>
+                  <p className="text-xs font-bold uppercase text-slate-400">
+                    {k}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold">
+                    {String(v)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT SIDE */}
+        <div>
+          <div className="flex items-center gap-3">
+            <Condition value={listing.condition} />
+
+            <span className="flex items-center gap-1 text-sm text-slate-500">
+              <MapPin className="h-4" />
+              {listing.region}
+            </span>
+          </div>
+
+          <h1 className="mt-4 text-4xl font-black leading-tight">
+            {listing.title}
+          </h1>
+
+          <p className="mt-2 text-slate-500">
+            {listing.brand} · {listing.model} · {listing.yearManufactured}
+          </p>
+
+          <div className="mt-7">
+            <Price listing={listing} />
+          </div>
+
+          <p className="mt-6 leading-7 text-slate-600">
+            {listing.description}
+          </p>
+
+          {/* Protected sourcing */}
+          <div className="mt-8 rounded-2xl border-2 border-braxtar-100 bg-braxtar-50 p-5">
+            <div className="flex gap-3">
+              <ShieldCheck className="mt-1 h-6 shrink-0 text-braxtar-600" />
+
+              <div>
+                <h3 className="font-bold">Protected sourcing</h3>
+
+                <p className="mt-1 text-sm leading-6 text-slate-600">
+                  Braxtar handles buyer communication and seller
+                  coordination. Seller identity and exact facility
+                  location are not published.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Inquiry form */}
+          <div className="mt-8 rounded-2xl border bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-black">
+              Ask Braxtar about this equipment
+            </h2>
+
+            {sent ? (
+              <div className="py-8 text-center">
+                <CheckCircle2 className="mx-auto h-12 text-green-600" />
+
+                <h3 className="mt-4 font-bold">
+                  Inquiry received
+                </h3>
+
+                <p className="mt-2 text-sm text-slate-500">
+                  Braxtar Tech will contact you directly.
+                </p>
+              </div>
+            ) : (
+              <form
+                onSubmit={submit}
+                className="mt-5 space-y-4"
+              >
+                {["buyerName", "buyerEmail", "buyerPhone"].map((k) => (
+                  <input
+                    required
+                    key={k}
+                    value={form[k]}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        [k]: e.target.value
+                      })
+                    }
+                    type={
+                      k === "buyerEmail"
+                        ? "email"
+                        : "text"
+                    }
+                    placeholder={{
+                      buyerName: "Full name",
+                      buyerEmail: "Email address",
+                      buyerPhone: "Phone number"
+                    }[k]}
+                    className="w-full rounded-xl border p-3.5"
+                  />
+                ))}
+
+                <textarea
+                  required
+                  value={form.message}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      message: e.target.value
+                    })
+                  }
+                  placeholder="Tell us what you need to know..."
+                  rows="4"
+                  className="w-full rounded-xl border p-3.5"
+                />
+
+                {error && (
+                  <p className="text-sm font-semibold text-red-600">
+                    {error}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  className="w-full rounded-xl bg-braxtar-700 px-5 py-3.5 font-bold text-white hover:bg-braxtar-800"
+                >
+                  Send inquiry{" "}
+                  <MessageSquare className="ml-2 inline h-4" />
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
+    </main>
+  );
 }
+
+
 
 function About() {
   return <main className="mx-auto max-w-7xl px-4 py-14"><div className="max-w-3xl"><p className="text-sm font-bold uppercase tracking-widest text-braxtar-600">Braxtar Tech Limited</p><h1 className="mt-3 text-4xl font-black">Medical equipment supply & engineering solutions</h1><p className="mt-6 text-lg leading-8 text-slate-600">Braxtar Tech is a Nairobi-based medical equipment supplier and engineering solution provider. Its stated scope includes supply, installation and training, alongside biomedical engineering services.</p></div>
