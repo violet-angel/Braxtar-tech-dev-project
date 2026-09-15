@@ -1,0 +1,170 @@
+{
+  "users": [
+    {
+      "id": "u-admin",
+      "name": "Braxtar Admin",
+      "email": "info@braxtartech.com",
+      "phone": "+254 759624355",
+      "role": "admin",
+      "createdAt": "2026-09-01T08:00:00Z"
+    },
+    {
+      "id": "u-buyer-demo",
+      "name": "Demo Buyer",
+      "email": "buyer@example.com",
+      "phone": "+254700000000",
+      "role": "buyer",
+      "createdAt": "2026-09-01T08:00:00Z"
+    }
+  ],
+  "listings": [
+    {
+      "id": "bx-001",
+      "title": "Digital X-Ray System",
+      "category": "Radiology & Imaging",
+      "brand": "Braxtar",
+      "model": "Digital X-Ray",
+      "yearManufactured": 2024,
+      "condition": "new",
+      "hoursUsed": 0,
+      "description": "Digital radiography system for hospital diagnostic imaging. Final configuration and installation requirements are confirmed by Braxtar during quotation.",
+      "specs": {
+        "systemType": "Digital X-Ray",
+        "tabletop": "2100 \u00d7 800 mm",
+        "tabletopHeight": "650 mm",
+        "longitudinalMovement": "1500 mm",
+        "verticalMovement": "930 mm",
+        "lateralMovement": "250 mm"
+      },
+      "sellerId": "u-seller-1",
+      "sellerName": "Private Supplier A",
+      "sellerContact": "+254700111111",
+      "sellerPrice": 4300000,
+      "commissionType": "percentage",
+      "commissionValue": 20,
+      "currency": "KES",
+      "exactLocation": "Private facility, Nairobi County, Kenya",
+      "region": "Kenya",
+      "status": "active",
+      "images": [
+        {
+          "url": "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80",
+          "isPrimary": true
+        }
+      ],
+      "publicDocuments": [],
+      "createdAt": "2026-09-05T08:00:00Z",
+      "updatedAt": "2026-09-05T08:00:00Z"
+    },
+    {
+      "id": "bx-002",
+      "title": "1.5T Superconductive Free-Helium MRI",
+      "category": "Radiology & Imaging",
+      "brand": "Braxtar",
+      "model": "1.5T MRI",
+      "yearManufactured": 2023,
+      "condition": "used-excellent",
+      "hoursUsed": 1200,
+      "description": "1.5T superconductive free-helium MRI configuration with comprehensive clinical applications. Availability and final configuration subject to inspection.",
+      "specs": {
+        "magnet": "1.5T",
+        "channels": "True 16 channels",
+        "gradient": "150 gradient engine",
+        "uniformity": "1ppm high uniformity magnet",
+        "acceleration": "2x acceleration",
+        "technology": "pSENSE compressive sensing imaging"
+      },
+      "sellerId": "u-seller-2",
+      "sellerName": "Private Supplier B",
+      "sellerContact": "+254700222222",
+      "sellerPrice": 72000000,
+      "commissionType": "percentage",
+      "commissionValue": 8,
+      "currency": "KES",
+      "exactLocation": "Private facility, East Africa",
+      "region": "East Africa",
+      "status": "active",
+      "images": [
+        {
+          "url": "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?auto=format&fit=crop&w=1200&q=80",
+          "isPrimary": true
+        }
+      ],
+      "publicDocuments": [],
+      "createdAt": "2026-09-04T08:00:00Z",
+      "updatedAt": "2026-09-04T08:00:00Z"
+    },
+    {
+      "id": "bx-003",
+      "title": "Wireless 12-Channel ECG Machine",
+      "category": "ICU & Critical Care",
+      "brand": "Braxtar",
+      "model": "iMAC 120",
+      "yearManufactured": 2025,
+      "condition": "new",
+      "hoursUsed": 0,
+      "description": "Wireless 12-channel ECG machine suitable for adult, pediatric and newborn use, with connectivity options for hospital information systems.",
+      "specs": {
+        "channels": "12",
+        "patients": "Adult, pediatric and newborn",
+        "connectivity": "Hospital information system connectivity",
+        "priceReference": "Catalogue-listed configuration"
+      },
+      "sellerId": "u-seller-3",
+      "sellerName": "Private Supplier C",
+      "sellerContact": "+254700333333",
+      "sellerPrice": 375000,
+      "commissionType": "flat",
+      "commissionValue": 75000,
+      "currency": "KES",
+      "exactLocation": "Supplier warehouse, Nairobi County, Kenya",
+      "region": "Kenya",
+      "status": "active",
+      "images": [
+        {
+          "url": "https://images.unsplash.com/photo-1584982751601-97dcc096659c?auto=format&fit=crop&w=1200&q=80",
+          "isPrimary": true
+        }
+      ],
+      "publicDocuments": [],
+      "createdAt": "2026-09-03T08:00:00Z",
+      "updatedAt": "2026-09-03T08:00:00Z"
+    },
+    {
+      "id": "bx-004",
+      "title": "Patient / Cardiac Monitor",
+      "category": "ICU & Critical Care",
+      "brand": "Braxtar",
+      "model": "U30",
+      "yearManufactured": 2024,
+      "condition": "used-good",
+      "hoursUsed": 850,
+      "description": "Patient monitoring equipment suitable for ICU, theatre and ward environments. Braxtar confirms configuration and condition before a transaction.",
+      "specs": {
+        "application": "ICU / Theatre / Ward",
+        "type": "Patient / Cardiac Monitor"
+      },
+      "sellerId": "u-seller-4",
+      "sellerName": "Private Supplier D",
+      "sellerContact": "+254700444444",
+      "sellerPrice": 180000,
+      "commissionType": "percentage",
+      "commissionValue": 25,
+      "currency": "KES",
+      "exactLocation": "Private hospital, Nairobi County, Kenya",
+      "region": "Kenya",
+      "status": "active",
+      "images": [
+        {
+          "url": "https://images.unsplash.com/photo-1516841273335-e39b37888115?auto=format&fit=crop&w=1200&q=80",
+          "isPrimary": true
+        }
+      ],
+      "publicDocuments": [],
+      "createdAt": "2026-09-02T08:00:00Z",
+      "updatedAt": "2026-09-02T08:00:00Z"
+    }
+  ],
+  "inquiries": [],
+  "deals": []
+}
