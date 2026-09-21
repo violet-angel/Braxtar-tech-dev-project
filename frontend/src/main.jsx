@@ -6,7 +6,8 @@ import {
   Route,
   Link,
   useNavigate,
-  useParams
+  useParams,
+  useSearchParams,
 } from "react-router-dom";
 import {
   Menu,
@@ -667,16 +668,30 @@ function Dashboard() {
   const navigate = useNavigate();
 
   const [featured, setFeatured] = useState([]);
+  const [categoryListings, setCategoryListings] = useState([]);
 
   useEffect(() => {
     api
       .listings()
-      .then((x) => setFeatured(x.listings))
+      .then((x) => {
+        setFeatured(x.listings);
+        setCategoryListings(x.listings);
+      })
       .catch(console.error);
   }, []);
 
+  const categories = [
+    "Radiology & Imaging",
+    "ICU & Critical Care",
+    "Theatre & Surgical",
+    "Dialysis",
+    "Spare Parts & Accessories",
+  ];
+
   return (
     <main className="mx-auto max-w-7xl px-4 py-10">
+
+      {/* Dashboard Hero */}
 
       <div className="rounded-3xl bg-gradient-to-br from-braxtar-900 via-braxtar-700 to-braxtar-600 p-8 text-white md:p-12">
 
@@ -716,6 +731,7 @@ function Dashboard() {
         </div>
 
       </div>
+
 
       {/* Quick access */}
 
@@ -784,6 +800,118 @@ function Dashboard() {
 
       </section>
 
+
+      {/* Equipment Categories */}
+
+      <section className="mt-14">
+
+        <div className="mb-8">
+
+          <p className="text-sm font-bold uppercase tracking-widest text-braxtar-600">
+            Equipment categories
+          </p>
+
+          <h2 className="mt-2 text-3xl font-black">
+            Browse by category
+          </h2>
+
+          <p className="mt-3 max-w-2xl text-slate-600">
+            Explore medical equipment by category. Each category
+            displays the lowest-priced equipment currently available.
+          </p>
+
+        </div>
+
+
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+
+          {categories.map((category) => {
+
+            const categoryEquipment = categoryListings.filter(
+              (item) => item.category === category
+            );
+
+            // Find the cheapest equipment in this category
+            const cheapestEquipment = categoryEquipment.reduce(
+              (cheapest, item) => {
+                if (!cheapest) return item;
+
+                return Number(item.buyerPrice) <
+                  Number(cheapest.buyerPrice)
+                  ? item
+                  : cheapest;
+              },
+              null
+            );
+
+            const coverImage =
+              cheapestEquipment?.images?.[0]?.url;
+
+            return (
+              <Link
+                key={category}
+                to={`/catalog?category=${encodeURIComponent(category)}`}
+                className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl"
+              >
+
+                <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+
+                  {coverImage ? (
+                    <img
+                      src={coverImage}
+                      alt={
+                        cheapestEquipment?.name || category
+                      }
+                      className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
+                      <ShieldCheck className="h-12 w-12 text-braxtar-600/50" />
+                    </div>
+                  )}
+
+                  {/* Image overlay */}
+
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                  {/* Category details */}
+
+                  <div className="absolute inset-x-0 bottom-0 p-5 text-white">
+
+                    <h3 className="text-lg font-bold">
+                      {category}
+                    </h3>
+
+                    {cheapestEquipment ? (
+                      <p className="mt-1 text-sm text-white/80">
+                        From{" "}
+                        {formatKES(
+                          cheapestEquipment.buyerPrice
+                        )}
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-sm text-white/70">
+                        No equipment currently available
+                      </p>
+                    )}
+
+                    <p className="mt-3 text-sm font-semibold">
+                      View equipment →
+                    </p>
+
+                  </div>
+
+                </div>
+
+              </Link>
+            );
+          })}
+
+        </div>
+
+      </section>
+
+
       {/* Dashboard product slider */}
 
       <section className="mt-14">
@@ -803,6 +931,7 @@ function Dashboard() {
         <ProductSlider />
 
       </section>
+
 
       {/* Current equipment */}
 
@@ -853,9 +982,13 @@ function Dashboard() {
 ========================================================= */
 
 function Catalog() {
+  const [searchParams] = useSearchParams();
+
+  const selectedCategory = searchParams.get("category") || "";
+
   const [filters, setFilters] = useState({
     q: "",
-    category: "",
+    category: selectedCategory,
     condition: "",
     minPrice: "",
     maxPrice: ""
@@ -863,6 +996,13 @@ function Catalog() {
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setFilters((current) => ({
+      ...current,
+      category: selectedCategory
+    }));
+  }, [selectedCategory]);
 
   useEffect(() => {
 
@@ -941,7 +1081,7 @@ function Catalog() {
               </option>
 
               {categories.map(([c]) => (
-                <option key={c}>
+                <option key={c} value={c}>
                   {c}
                 </option>
               ))}
