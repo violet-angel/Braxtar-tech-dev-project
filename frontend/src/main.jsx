@@ -674,8 +674,8 @@ function Dashboard() {
     api
       .listings()
       .then((x) => {
-        setFeatured(x.listings);
-        setCategoryListings(x.listings);
+        setFeatured(x.listings || []);
+        setCategoryListings(x.listings || []);
       })
       .catch(console.error);
   }, []);
@@ -687,6 +687,14 @@ function Dashboard() {
     "Dialysis",
     "Spare Parts & Accessories",
   ];
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat("en-KE", {
+      style: "currency",
+      currency: "KES",
+      maximumFractionDigits: 0,
+    }).format(Number(price) || 0);
+  };
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-10">
@@ -761,6 +769,7 @@ function Dashboard() {
 
           </Link>
 
+
           <Link
             to="/about"
             className="rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
@@ -778,6 +787,7 @@ function Dashboard() {
             </p>
 
           </Link>
+
 
           <Link
             to="/admin"
@@ -831,15 +841,18 @@ function Dashboard() {
               (item) => item.category === category
             );
 
-            // Find the cheapest equipment in this category
             const cheapestEquipment = categoryEquipment.reduce(
               (cheapest, item) => {
-                if (!cheapest) return item;
+
+                if (!cheapest) {
+                  return item;
+                }
 
                 return Number(item.buyerPrice) <
                   Number(cheapest.buyerPrice)
                   ? item
                   : cheapest;
+
               },
               null
             );
@@ -857,6 +870,7 @@ function Dashboard() {
                 <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
 
                   {coverImage ? (
+
                     <img
                       src={coverImage}
                       alt={
@@ -864,17 +878,24 @@ function Dashboard() {
                       }
                       className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
                     />
+
                   ) : (
-                    <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
-                      <ShieldCheck className="h-12 w-12 text-braxtar-600/50" />
+
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-100">
+
+                      <PackageSearch className="h-10 w-10 text-slate-400" />
+
+                      <p className="mt-3 text-sm text-slate-500">
+                        No equipment available
+                      </p>
+
                     </div>
+
                   )}
 
-                  {/* Image overlay */}
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
-                  {/* Category details */}
 
                   <div className="absolute inset-x-0 bottom-0 p-5 text-white">
 
@@ -882,16 +903,12 @@ function Dashboard() {
                       {category}
                     </h3>
 
-                    {cheapestEquipment ? (
+                    {cheapestEquipment && (
                       <p className="mt-1 text-sm text-white/80">
                         From{" "}
-                        {formatKES(
+                        {formatPrice(
                           cheapestEquipment.buyerPrice
                         )}
-                      </p>
-                    ) : (
-                      <p className="mt-1 text-sm text-white/70">
-                        No equipment currently available
                       </p>
                     )}
 
@@ -905,6 +922,7 @@ function Dashboard() {
 
               </Link>
             );
+
           })}
 
         </div>
@@ -912,7 +930,7 @@ function Dashboard() {
       </section>
 
 
-      {/* Dashboard product slider */}
+      {/* Dashboard Product Slider */}
 
       <section className="mt-14">
 
@@ -959,6 +977,7 @@ function Dashboard() {
           </Link>
 
         </div>
+
 
         <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
 
