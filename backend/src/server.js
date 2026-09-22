@@ -80,7 +80,7 @@ app.post("/api/admin/listings", requireRole("admin"), (req, res) => {
     specs: body.specs || {}, sellerId: body.sellerId || null, sellerName: body.sellerName || "",
     sellerContact: body.sellerContact || "", sellerPrice: Number(body.sellerPrice || 0),
     commissionType: body.commissionType || "percentage", commissionValue: Number(body.commissionValue || 0),
-    currency: body.currency || "KES", exactLocation: body.exactLocation || "",
+    currency: "USD", exactLocation: body.exactLocation || "",
     region: body.region || "", status: body.status || "pending_review",
     images: body.images || [], publicDocuments: body.publicDocuments || [],
     createdAt: now, updatedAt: now

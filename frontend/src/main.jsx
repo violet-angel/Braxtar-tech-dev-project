@@ -1665,40 +1665,238 @@ function About() {
 ========================================================= */
 
 function Admin() {
-  const [
-    tab,
-    setTab
-  ] = useState("listings");
+  const [tab, setTab] = useState("listings");
 
   const [listings, setListings] = useState([]);
   const [inquiries, setInquiries] = useState([]);
   const [deals, setDeals] = useState([]);
 
+  const [showListingForm, setShowListingForm] = useState(false);
+  const [showDealForm, setShowDealForm] = useState(false);
+
+  const [saving, setSaving] = useState(false);
+
+  const [listingForm, setListingForm] = useState({
+    title: "",
+    category: "Radiology & Imaging",
+    brand: "",
+    model: "",
+    condition: "Used",
+    sellerName: "",
+    sellerContact: "",
+    sellerPrice: "",
+    commissionType: "percentage",
+    commissionValue: "",
+    exactLocation: "",
+    region: "",
+    status: "pending_review",
+    description: ""
+  });
+
+  const [dealForm, setDealForm] = useState({
+    listingId: "",
+    finalPrice: "",
+    status: "closed"
+  });
+
   const refresh = () => {
-
-    api
-      .adminListings()
-      .then((x) => setListings(x.listings));
-
-    api
-      .adminInquiries()
-      .then((x) => setInquiries(x.inquiries));
-
-    api
-      .adminDeals()
-      .then((x) => setDeals(x.deals));
-
+    api.adminListings().then((x) => setListings(x.listings));
+    api.adminInquiries().then((x) => setInquiries(x.inquiries));
+    api.adminDeals().then((x) => setDeals(x.deals));
   };
 
-  useEffect(refresh, []);
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  // =========================
+  // PRICE HELPERS
+  // =========================
+
+  const formatUSD = (value) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0
+    }).format(Number(value || 0));
+  };
+
+  const calculateCommission = (sellerPrice, type, value) => {
+    const price = Number(sellerPrice || 0);
+    const commission = Number(value || 0);
+
+    if (type === "percentage") {
+      return price * (commission / 100);
+    }
+
+    return commission;
+  };
+
+  const calculateBuyerPrice = (sellerPrice, type, value) => {
+    return (
+      Number(sellerPrice || 0) +
+      calculateCommission(sellerPrice, type, value)
+    );
+  };
+
+  // =========================
+  // LISTING FORM
+  // =========================
+
+  const listingCommission = calculateCommission(
+    listingForm.sellerPrice,
+    listingForm.commissionType,
+    listingForm.commissionValue
+  );
+
+  const listingBuyerPrice = calculateBuyerPrice(
+    listingForm.sellerPrice,
+    listingForm.commissionType,
+    listingForm.commissionValue
+  );
+
+  const handleListingChange = (e) => {
+    const { name, value } = e.target;
+
+    setListingForm((current) => ({
+      ...current,
+      [name]: value
+    }));
+  };
+
+  const addListing = async (e) => {
+    e.preventDefault();
+
+    if (!listingForm.title || !listingForm.sellerPrice) {
+      alert("Equipment title and seller price are required.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      await api.createListing({
+        ...listingForm,
+        sellerPrice: Number(listingForm.sellerPrice),
+        commissionValue: Number(listingForm.commissionValue || 0),
+        currency: "USD"
+      });
+
+      setListingForm({
+        title: "",
+        category: "Radiology & Imaging",
+        brand: "",
+        model: "",
+        condition: "Used",
+        sellerName: "",
+        sellerContact: "",
+        sellerPrice: "",
+        commissionType: "percentage",
+        commissionValue: "",
+        exactLocation: "",
+        region: "",
+        status: "pending_review",
+        description: ""
+      });
+
+      setShowListingForm(false);
+      refresh();
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // =========================
+  // UPDATE LISTING
+  // =========================
+
+  const updateListingField = async (listing, field, value) => {
+    try {
+      await api.updateListing(listing.id, {
+        [field]:
+          field === "sellerPrice" || field === "commissionValue"
+            ? Number(value)
+            : value,
+        currency: "USD"
+      });
+
+      refresh();
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
+  // =========================
+  // DEAL FORM
+  // =========================
+
+  const selectedDealListing = listings.find(
+    (l) => l.id === dealForm.listingId
+  );
+
+  const dealSellerPrice = selectedDealListing
+    ? Number(selectedDealListing.sellerPrice || 0)
+    : 0;
+
+  const dealFinalPrice = Number(dealForm.finalPrice || 0);
+
+  const dealCommission = Math.max(
+    0,
+    dealFinalPrice - dealSellerPrice
+  );
+
+  const handleDealChange = (e) => {
+    const { name, value } = e.target;
+
+    setDealForm((current) => ({
+      ...current,
+      [name]: value
+    }));
+  };
+
+  const addDeal = async (e) => {
+    e.preventDefault();
+
+    if (!dealForm.listingId || !dealForm.finalPrice) {
+      alert("Select a listing and enter the final selling price.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      await api.createDeal({
+        listingId: dealForm.listingId,
+        finalPrice: Number(dealForm.finalPrice),
+        status: dealForm.status,
+        currency: "USD"
+      });
+
+      setDealForm({
+        listingId: "",
+        finalPrice: "",
+        status: "closed"
+      });
+
+      setShowDealForm(false);
+      refresh();
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-10">
 
+      {/* HEADER */}
+
       <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
 
         <div>
-
           <p className="text-sm font-bold uppercase tracking-widest text-braxtar-600">
             Internal
           </p>
@@ -1710,10 +1908,11 @@ function Admin() {
           <p className="mt-2 text-slate-500">
             Seller-sensitive information is visible only in this area.
           </p>
-
         </div>
 
       </div>
+
+      {/* TABS */}
 
       <div className="mt-8 flex gap-2 overflow-auto border-b">
 
@@ -1732,113 +1931,462 @@ function Admin() {
                 : "border-transparent text-slate-500"
             }`}
           >
-
-            <I className="h-4" />
-
+            <I className="h-4 w-4" />
             {label}
-
           </button>
 
         ))}
 
       </div>
 
-      {/* LISTINGS */}
+      {/* =====================================================
+          LISTINGS
+      ===================================================== */}
 
       {tab === "listings" && (
 
-        <div className="mt-6 overflow-x-auto rounded-2xl border bg-white">
+        <div className="mt-6">
 
-          <table className="w-full text-left text-sm">
+          <div className="mb-4 flex justify-end">
 
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+            <button
+              onClick={() => setShowListingForm(!showListingForm)}
+              className="rounded-xl bg-braxtar-700 px-5 py-3 text-sm font-bold text-white hover:bg-braxtar-800"
+            >
+              {showListingForm ? "Close Form" : "+ Add Listing"}
+            </button>
 
-              <tr>
+          </div>
 
-                <th className="p-4">
-                  Equipment
-                </th>
+          {/* ADD LISTING FORM */}
 
-                <th className="p-4">
-                  Seller
-                </th>
+          {showListingForm && (
 
-                <th className="p-4">
-                  Seller price
-                </th>
+            <form
+              onSubmit={addListing}
+              className="mb-6 rounded-2xl border bg-white p-6 shadow-sm"
+            >
 
-                <th className="p-4">
-                  Buyer price
-                </th>
+              <h2 className="text-xl font-black">
+                Add Equipment Listing
+              </h2>
 
-                <th className="p-4">
-                  Exact location
-                </th>
+              <p className="mt-1 text-sm text-slate-500">
+                All marketplace prices are entered in USD.
+              </p>
 
-                <th className="p-4">
-                  Status
-                </th>
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
 
-              </tr>
+                <input
+                  name="title"
+                  value={listingForm.title}
+                  onChange={handleListingChange}
+                  placeholder="Equipment title"
+                  className="rounded-lg border p-3"
+                />
 
-            </thead>
-
-            <tbody>
-
-              {listings.map((l) => (
-
-                <tr
-                  className="border-t"
-                  key={l.id}
+                <select
+                  name="category"
+                  value={listingForm.category}
+                  onChange={handleListingChange}
+                  className="rounded-lg border p-3"
                 >
+                  <option>Radiology & Imaging</option>
+                  <option>ICU & Critical Care</option>
+                  <option>Theatre & Surgical</option>
+                  <option>Dialysis</option>
+                  <option>Spare Parts & Accessories</option>
+                </select>
 
-                  <td className="p-4 font-semibold">
-                    {l.title}
-                  </td>
+                <input
+                  name="brand"
+                  value={listingForm.brand}
+                  onChange={handleListingChange}
+                  placeholder="Brand"
+                  className="rounded-lg border p-3"
+                />
 
-                  <td className="p-4">
-                    {l.sellerName}
-                    <br />
-                    <span className="text-xs text-slate-400">
-                      {l.sellerContact}
-                    </span>
-                  </td>
+                <input
+                  name="model"
+                  value={listingForm.model}
+                  onChange={handleListingChange}
+                  placeholder="Model"
+                  className="rounded-lg border p-3"
+                />
 
-                  <td className="p-4">
-                    {l.currency}{" "}
-                    {Number(
-                      l.sellerPrice
-                    ).toLocaleString()}
-                  </td>
+                <select
+                  name="condition"
+                  value={listingForm.condition}
+                  onChange={handleListingChange}
+                  className="rounded-lg border p-3"
+                >
+                  <option>New</option>
+                  <option>Used</option>
+                  <option>Refurbished</option>
+                </select>
 
-                  <td className="p-4 font-bold">
-                    {l.currency}{" "}
-                    {Number(
-                      l.buyerPrice
-                    ).toLocaleString()}
-                  </td>
+                <input
+                  name="sellerName"
+                  value={listingForm.sellerName}
+                  onChange={handleListingChange}
+                  placeholder="Seller name"
+                  className="rounded-lg border p-3"
+                />
 
-                  <td className="p-4">
-                    {l.exactLocation}
-                  </td>
+                <input
+                  name="sellerContact"
+                  value={listingForm.sellerContact}
+                  onChange={handleListingChange}
+                  placeholder="Seller contact"
+                  className="rounded-lg border p-3"
+                />
 
-                  <td className="p-4">
-                    {l.status}
-                  </td>
+                <input
+                  name="sellerPrice"
+                  type="number"
+                  min="0"
+                  value={listingForm.sellerPrice}
+                  onChange={handleListingChange}
+                  placeholder="Seller price (USD)"
+                  className="rounded-lg border p-3"
+                />
 
+                <select
+                  name="commissionType"
+                  value={listingForm.commissionType}
+                  onChange={handleListingChange}
+                  className="rounded-lg border p-3"
+                >
+                  <option value="percentage">
+                    Percentage commission
+                  </option>
+
+                  <option value="fixed">
+                    Fixed commission
+                  </option>
+                </select>
+
+                <input
+                  name="commissionValue"
+                  type="number"
+                  min="0"
+                  value={listingForm.commissionValue}
+                  onChange={handleListingChange}
+                  placeholder={
+                    listingForm.commissionType === "percentage"
+                      ? "Commission (%)"
+                      : "Commission (USD)"
+                  }
+                  className="rounded-lg border p-3"
+                />
+
+                <input
+                  name="exactLocation"
+                  value={listingForm.exactLocation}
+                  onChange={handleListingChange}
+                  placeholder="Exact location"
+                  className="rounded-lg border p-3"
+                />
+
+                <input
+                  name="region"
+                  value={listingForm.region}
+                  onChange={handleListingChange}
+                  placeholder="Public region"
+                  className="rounded-lg border p-3"
+                />
+
+                <select
+                  name="status"
+                  value={listingForm.status}
+                  onChange={handleListingChange}
+                  className="rounded-lg border p-3"
+                >
+                  <option value="pending_review">
+                    Pending Review
+                  </option>
+
+                  <option value="active">
+                    Active
+                  </option>
+
+                  <option value="sold">
+                    Sold
+                  </option>
+
+                  <option value="removed">
+                    Removed
+                  </option>
+                </select>
+
+              </div>
+
+              <textarea
+                name="description"
+                value={listingForm.description}
+                onChange={handleListingChange}
+                placeholder="Equipment description"
+                rows="4"
+                className="mt-4 w-full rounded-lg border p-3"
+              />
+
+              {/* AUTOMATIC PRICE CALCULATION */}
+
+              <div className="mt-5 grid gap-4 md:grid-cols-3">
+
+                <div className="rounded-xl bg-slate-50 p-4">
+                  <p className="text-xs font-bold uppercase text-slate-500">
+                    Seller Price
+                  </p>
+
+                  <p className="mt-1 text-xl font-black">
+                    {formatUSD(listingForm.sellerPrice)}
+                  </p>
+                </div>
+
+                <div className="rounded-xl bg-slate-50 p-4">
+                  <p className="text-xs font-bold uppercase text-slate-500">
+                    Commission
+                  </p>
+
+                  <p className="mt-1 text-xl font-black">
+                    {formatUSD(listingCommission)}
+                  </p>
+                </div>
+
+                <div className="rounded-xl bg-braxtar-50 p-4">
+                  <p className="text-xs font-bold uppercase text-braxtar-700">
+                    Buyer Price
+                  </p>
+
+                  <p className="mt-1 text-xl font-black text-braxtar-800">
+                    {formatUSD(listingBuyerPrice)}
+                  </p>
+                </div>
+
+              </div>
+
+              <button
+                type="submit"
+                disabled={saving}
+                className="mt-5 rounded-xl bg-braxtar-700 px-6 py-3 font-bold text-white disabled:opacity-50"
+              >
+                {saving ? "Saving..." : "Save Listing"}
+              </button>
+
+            </form>
+
+          )}
+
+          {/* LISTINGS TABLE */}
+
+          <div className="overflow-x-auto rounded-2xl border bg-white">
+
+            <table className="w-full min-w-[1100px] text-left text-sm">
+
+              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+
+                <tr>
+                  <th className="p-4">Equipment</th>
+                  <th className="p-4">Seller</th>
+                  <th className="p-4">Seller Price</th>
+                  <th className="p-4">Commission</th>
+                  <th className="p-4">Buyer Price</th>
+                  <th className="p-4">Exact Location</th>
+                  <th className="p-4">Status</th>
                 </tr>
 
-              ))}
+              </thead>
 
-            </tbody>
+              <tbody>
 
-          </table>
+                {listings.map((l) => (
+
+                  <tr
+                    key={l.id}
+                    className="border-t"
+                  >
+
+                    <td className="p-4">
+                      <input
+                        defaultValue={l.title}
+                        onBlur={(e) =>
+                          updateListingField(
+                            l,
+                            "title",
+                            e.target.value
+                          )
+                        }
+                        className="w-48 rounded-lg border p-2 font-semibold"
+                      />
+
+                      <p className="mt-1 text-xs text-slate-400">
+                        {l.brand} {l.model}
+                      </p>
+                    </td>
+
+                    <td className="p-4">
+
+                      <input
+                        defaultValue={l.sellerName}
+                        onBlur={(e) =>
+                          updateListingField(
+                            l,
+                            "sellerName",
+                            e.target.value
+                          )
+                        }
+                        className="w-40 rounded-lg border p-2"
+                      />
+
+                      <input
+                        defaultValue={l.sellerContact}
+                        onBlur={(e) =>
+                          updateListingField(
+                            l,
+                            "sellerContact",
+                            e.target.value
+                          )
+                        }
+                        className="mt-2 w-40 rounded-lg border p-2 text-xs"
+                      />
+
+                    </td>
+
+                    <td className="p-4">
+
+                      <div className="flex items-center gap-1">
+
+                        <span className="font-bold">$</span>
+
+                        <input
+                          type="number"
+                          defaultValue={l.sellerPrice}
+                          onBlur={(e) =>
+                            updateListingField(
+                              l,
+                              "sellerPrice",
+                              e.target.value
+                            )
+                          }
+                          className="w-32 rounded-lg border p-2"
+                        />
+
+                      </div>
+
+                    </td>
+
+                    <td className="p-4">
+
+                      <div className="space-y-2">
+
+                        <select
+                          value={l.commissionType || "percentage"}
+                          onChange={(e) =>
+                            updateListingField(
+                              l,
+                              "commissionType",
+                              e.target.value
+                            )
+                          }
+                          className="rounded-lg border p-2 text-xs"
+                        >
+                          <option value="percentage">%</option>
+                          <option value="fixed">$</option>
+                        </select>
+
+                        <input
+                          type="number"
+                          defaultValue={l.commissionValue || 0}
+                          onBlur={(e) =>
+                            updateListingField(
+                              l,
+                              "commissionValue",
+                              e.target.value
+                            )
+                          }
+                          className="w-24 rounded-lg border p-2"
+                        />
+
+                      </div>
+
+                    </td>
+
+                    <td className="p-4 font-black text-braxtar-700">
+                      {formatUSD(
+                        calculateBuyerPrice(
+                          l.sellerPrice,
+                          l.commissionType,
+                          l.commissionValue
+                        )
+                      )}
+                    </td>
+
+                    <td className="p-4">
+
+                      <input
+                        defaultValue={l.exactLocation}
+                        onBlur={(e) =>
+                          updateListingField(
+                            l,
+                            "exactLocation",
+                            e.target.value
+                          )
+                        }
+                        className="w-48 rounded-lg border p-2"
+                      />
+
+                    </td>
+
+                    <td className="p-4">
+
+                      <select
+                        value={l.status}
+                        onChange={(e) =>
+                          updateListingField(
+                            l,
+                            "status",
+                            e.target.value
+                          )
+                        }
+                        className="rounded-lg border p-2 font-semibold"
+                      >
+                        <option value="pending_review">
+                          Pending Review
+                        </option>
+
+                        <option value="active">
+                          Active
+                        </option>
+
+                        <option value="sold">
+                          Sold
+                        </option>
+
+                        <option value="removed">
+                          Removed
+                        </option>
+                      </select>
+
+                    </td>
+
+                  </tr>
+
+                ))}
+
+              </tbody>
+
+            </table>
+
+          </div>
 
         </div>
 
       )}
 
-      {/* INQUIRIES */}
+      {/* =====================================================
+          INQUIRIES
+      ===================================================== */}
 
       {tab === "inquiries" && (
 
@@ -1862,8 +2410,7 @@ function Admin() {
                     </h3>
 
                     <p className="mt-1 text-sm">
-                      {i.buyerName} ·{" "}
-                      {i.buyerEmail} ·{" "}
+                      {i.buyerName} · {i.buyerEmail} ·{" "}
                       {i.buyerPhone}
                     </p>
 
@@ -1873,36 +2420,26 @@ function Admin() {
                     value={i.status}
                     onChange={async (e) => {
 
-                      await api.updateInquiry(
-                        i.id,
-                        e.target.value
-                      );
+                      try {
+                        await api.updateInquiry(
+                          i.id,
+                          e.target.value
+                        );
 
-                      refresh();
+                        refresh();
+                      } catch (error) {
+                        alert(error.message);
+                      }
 
                     }}
-                    className="rounded-lg border p-2 text-sm"
+                    className="rounded-lg border p-2 text-sm font-semibold"
                   >
 
-                    <option>
-                      new
-                    </option>
-
-                    <option>
-                      contacted
-                    </option>
-
-                    <option>
-                      negotiating
-                    </option>
-
-                    <option>
-                      closed
-                    </option>
-
-                    <option>
-                      lost
-                    </option>
+                    <option value="new">New</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="negotiating">Negotiating</option>
+                    <option value="closed">Closed</option>
+                    <option value="lost">Lost</option>
 
                   </select>
 
@@ -1928,84 +2465,261 @@ function Admin() {
 
       )}
 
-      {/* DEALS */}
+      {/* =====================================================
+          DEALS
+      ===================================================== */}
 
       {tab === "deals" && (
 
-        <div className="mt-6 overflow-x-auto rounded-2xl border bg-white">
+        <div className="mt-6">
 
-          <table className="w-full text-left text-sm">
+          <div className="mb-4 flex justify-end">
 
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+            <button
+              onClick={() => setShowDealForm(!showDealForm)}
+              className="rounded-xl bg-braxtar-700 px-5 py-3 text-sm font-bold text-white hover:bg-braxtar-800"
+            >
+              {showDealForm ? "Close Form" : "+ Add Deal"}
+            </button>
 
-              <tr>
+          </div>
 
-                <th className="p-4">
-                  Listing
-                </th>
+          {/* ADD DEAL */}
 
-                <th className="p-4">
-                  Seller price
-                </th>
+          {showDealForm && (
 
-                <th className="p-4">
-                  Final price
-                </th>
+            <form
+              onSubmit={addDeal}
+              className="mb-6 rounded-2xl border bg-white p-6 shadow-sm"
+            >
 
-                <th className="p-4">
-                  Commission
-                </th>
+              <h2 className="text-xl font-black">
+                Record New Deal
+              </h2>
 
-                <th className="p-4">
-                  Status
-                </th>
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
 
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              {deals.map((d) => (
-
-                <tr
-                  className="border-t"
-                  key={d.id}
+                <select
+                  name="listingId"
+                  value={dealForm.listingId}
+                  onChange={handleDealChange}
+                  className="rounded-lg border p-3"
                 >
 
-                  <td className="p-4">
-                    {d.listingId}
-                  </td>
+                  <option value="">
+                    Select equipment listing
+                  </option>
 
-                  <td className="p-4">
-                    {Number(
-                      d.sellerPrice
-                    ).toLocaleString()}
-                  </td>
+                  {listings
+                    .filter((l) => l.status !== "removed")
+                    .map((l) => (
 
-                  <td className="p-4">
-                    {Number(
-                      d.finalPrice
-                    ).toLocaleString()}
-                  </td>
+                      <option
+                        key={l.id}
+                        value={l.id}
+                      >
+                        {l.title}
+                      </option>
 
-                  <td className="p-4 font-bold">
-                    {Number(
-                      d.commissionAmount
-                    ).toLocaleString()}
-                  </td>
+                    ))}
 
-                  <td className="p-4">
-                    {d.status}
-                  </td>
+                </select>
 
+                <input
+                  name="finalPrice"
+                  type="number"
+                  min="0"
+                  value={dealForm.finalPrice}
+                  onChange={handleDealChange}
+                  placeholder="Final selling price (USD)"
+                  className="rounded-lg border p-3"
+                />
+
+                <select
+                  name="status"
+                  value={dealForm.status}
+                  onChange={handleDealChange}
+                  className="rounded-lg border p-3"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="closed">Closed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+
+              </div>
+
+              {/* AUTOMATIC DEAL CALCULATION */}
+
+              <div className="mt-5 grid gap-4 md:grid-cols-3">
+
+                <div className="rounded-xl bg-slate-50 p-4">
+
+                  <p className="text-xs font-bold uppercase text-slate-500">
+                    Seller Price
+                  </p>
+
+                  <p className="mt-1 text-xl font-black">
+                    {formatUSD(dealSellerPrice)}
+                  </p>
+
+                </div>
+
+                <div className="rounded-xl bg-slate-50 p-4">
+
+                  <p className="text-xs font-bold uppercase text-slate-500">
+                    Final Price
+                  </p>
+
+                  <p className="mt-1 text-xl font-black">
+                    {formatUSD(dealFinalPrice)}
+                  </p>
+
+                </div>
+
+                <div className="rounded-xl bg-braxtar-50 p-4">
+
+                  <p className="text-xs font-bold uppercase text-braxtar-700">
+                    Commission
+                  </p>
+
+                  <p className="mt-1 text-xl font-black text-braxtar-800">
+                    {formatUSD(dealCommission)}
+                  </p>
+
+                </div>
+
+              </div>
+
+              <button
+                type="submit"
+                disabled={saving}
+                className="mt-5 rounded-xl bg-braxtar-700 px-6 py-3 font-bold text-white disabled:opacity-50"
+              >
+                {saving ? "Saving..." : "Save Deal"}
+              </button>
+
+            </form>
+
+          )}
+
+          {/* DEALS TABLE */}
+
+          <div className="overflow-x-auto rounded-2xl border bg-white">
+
+            <table className="w-full min-w-[900px] text-left text-sm">
+
+              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+
+                <tr>
+                  <th className="p-4">Listing</th>
+                  <th className="p-4">Seller Price</th>
+                  <th className="p-4">Final Price</th>
+                  <th className="p-4">Commission</th>
+                  <th className="p-4">Status</th>
                 </tr>
 
-              ))}
+              </thead>
 
-            </tbody>
+              <tbody>
 
-          </table>
+                {deals.map((d) => {
+
+                  const listing = listings.find(
+                    (l) => l.id === d.listingId
+                  );
+
+                  return (
+                    <tr
+                      className="border-t"
+                      key={d.id}
+                    >
+
+                      <td className="p-4 font-semibold">
+                        {listing?.title || d.listingId}
+                      </td>
+
+                      <td className="p-4">
+                        {formatUSD(d.sellerPrice)}
+                      </td>
+
+                      <td className="p-4">
+
+                        <input
+                          type="number"
+                          defaultValue={d.finalPrice}
+                          onBlur={(e) => {
+                            const newFinalPrice =
+                              Number(e.target.value || 0);
+
+                            const commission = Math.max(
+                              0,
+                              newFinalPrice -
+                                Number(d.sellerPrice || 0)
+                            );
+
+                            console.log(
+                              "Updated deal:",
+                              d.id,
+                              newFinalPrice,
+                              commission
+                            );
+                          }}
+                          className="w-32 rounded-lg border p-2"
+                        />
+
+                      </td>
+
+                      <td className="p-4 font-black text-braxtar-700">
+                        {formatUSD(d.commissionAmount)}
+                      </td>
+
+                      <td className="p-4">
+
+                        <select
+                          value={d.status}
+                          onChange={(e) => {
+
+                            setDeals((current) =>
+                              current.map((deal) =>
+                                deal.id === d.id
+                                  ? {
+                                      ...deal,
+                                      status: e.target.value
+                                    }
+                                  : deal
+                              )
+                            );
+
+                          }}
+                          className="rounded-lg border p-2 font-semibold"
+                        >
+
+                          <option value="pending">
+                            Pending
+                          </option>
+
+                          <option value="closed">
+                            Closed
+                          </option>
+
+                          <option value="cancelled">
+                            Cancelled
+                          </option>
+
+                        </select>
+
+                      </td>
+
+                    </tr>
+                  );
+
+                })}
+
+              </tbody>
+
+            </table>
+
+          </div>
 
         </div>
 
